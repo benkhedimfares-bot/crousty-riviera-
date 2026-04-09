@@ -312,18 +312,14 @@ if (!p) { toast('⚠️ Le prénom est requis !', 'warning'); return; }
 if (!force && findDupes(p, n).length > 0) { checkDuplicate(); return; }
 var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 var newC = { id: id, prenom: p, nom: n, commandes: 0, historique: [], boissons_offerts: 0, repas_offerts: 0 };
-var newC = { id: id, prenom: p, nom: n, commandes: 0, historique: [], boissons_offerts: 0, repas_offerts: 0 };
-loader(true);
-dbInsert(newC).then(function() {
 clients.push({ id: id, prenom: p, nom: n, commandes: 0, historique: [], createdAt: new Date().toISOString(), boissonsOfferts: 0, repasOfferts: 0 });
+save();
 document.getElementById('newPrenom').value = '';
 document.getElementById('newNom').value = '';
 document.getElementById('dupe-warning').style.display = 'none';
 document.getElementById('addClientBtn').style.display = 'block';
 toast('🎉 ' + p + ' rejoint le Riviera Club !', 'success');
-loader(false);
 showScreen('clients');
-}).catch(function() { toast('Erreur création', 'warning'); loader(false); });
 }
 
 // Open client modal
@@ -410,18 +406,15 @@ c.commandes++;
 var icons = { tasty: '🥗', burger: '🍔', sandwich: '🥖' };
 var labels = { tasty: 'Tasty Riviera', burger: 'Riviera Burger', sandwich: 'Atelier Sandwich' };
 c.historique.push({ type: labels[orderType], icon: icons[orderType], date: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) });
-loader(true);
-dbUpdate(c.id, { commandes: c.commandes, historique: c.historique }).then(function() {
+save();
 var stamps = c.commandes % 10;
 document.getElementById('orderModal').classList.remove('open');
 var msg = '✅ Commande enregistrée ! (' + stamps + '/10)';
 if (stamps === 5) msg = '🥤 5ème commande ! Boisson offerte !';
 if (stamps === 0) msg = '🎁 10/10 ! Prochain repas OFFERT !';
 toast(msg, 'success');
-loader(false);
 openClient(currentId);
 renderClients(document.getElementById('searchInput').value);
-}).catch(function() { toast('Erreur', 'warning'); c.commandes--; c.historique.pop(); loader(false); });
 }
 
 function useReward(id, type) {
@@ -430,11 +423,7 @@ if (!c) return;
 var updates = {};
 if (type === 'drink') { c.boissonsOfferts++; updates.boissons_offerts = c.boissonsOfferts; toast('🥤 Boisson offerte notée !', 'success'); }
 if (type === 'free') { c.repasOfferts++; c.commandes = Math.floor(c.commandes / 10) * 10; updates.repas_offerts = c.repasOfferts; updates.commandes = c.commandes; toast('🎁 Repas offert validé !', 'success'); }
-loader(true);
-var updates = {};
-if (type === 'drink') updates.boissons_offerts = c.boissonsOfferts;
-if (type === 'free') { updates.repas_offerts = c.repasOfferts; updates.commandes = c.commandes; }
-dbUpdate(id, updates).then(function() { loader(false); openClient(id); renderClients(); }).catch(function() { toast('Erreur', 'warning'); loader(false); });
+save(); openClient(id); renderClients();
 }
 
 function confirmDelete(id) {
@@ -448,16 +437,13 @@ document.getElementById('deleteModal').classList.add('open');
 
 function doDelete() {
 if (!deleteId) return;
-loader(true);
-dbDelete(deleteId).then(function() {
 clients = clients.filter(function(x) { return x.id !== deleteId; });
+save();
 deleteId = null;
 document.getElementById('deleteModal').classList.remove('open');
 document.getElementById('clientModal').classList.remove('open');
 renderClients();
 toast('🗑️ Fiche supprimée.', 'warning');
-loader(false);
-}).catch(function() { toast('Erreur suppression', 'warning'); loader(false); });
 }
 
 function renderStats() {
